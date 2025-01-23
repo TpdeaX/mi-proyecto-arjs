@@ -6,7 +6,7 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
   </head>
-  <body style="margin: 0; overflow: hidden;">
+  <body style="margin: 0; overflow: hidden">
     <a-scene
       embedded
       loading-screen="enabled: false;"
@@ -20,7 +20,6 @@
     </a-scene>
 
     <script>
-      // Define array of models with dynamic IDs and sources
       const models = [
         {
           id: "duck-model",
@@ -32,8 +31,8 @@
         {
           id: "box-model",
           src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Box/glTF-Binary/Box.glb",
-          latitude: -8.38392500,
-          longitude: -74.53215000,
+          latitude: -8.383925,
+          longitude: -74.53215,
           scale: "1.5 1.5 1.5",
         },
         {
@@ -41,6 +40,13 @@
           src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/CesiumMan/glTF-Binary/CesiumMan.glb",
           latitude: -8.383619991786283,
           longitude: -74.53252717601482,
+          scale: "2 2 2",
+        },
+        {
+          id: "fox-model",
+          src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Fox/glTF-Binary/Fox.glb",
+          latitude: -8.399784982557039,
+          longitude: -74.57542011341545,
           scale: "2 2 2",
         },
       ];
@@ -60,7 +66,10 @@
         // Create entity
         const entity = document.createElement("a-entity");
         entity.setAttribute("gltf-model", `#${item.id}`);
-        entity.setAttribute("gps-entity-place", `latitude: ${item.latitude}; longitude: ${item.longitude};`);
+        entity.setAttribute(
+          "gps-entity-place",
+          `latitude: ${item.latitude}; longitude: ${item.longitude};`
+        );
         entity.setAttribute("scale", item.scale);
         scene.appendChild(entity);
       });

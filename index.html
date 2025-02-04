@@ -5,33 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-      #camera-selector {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 1000;
-        background: rgba(255, 255, 255, 0.8);
-        padding: 10px;
-        border-radius: 5px;
-      }
-    </style>
   </head>
   <body>
-    <!-- Selector de cámara -->
-    <div id="camera-selector">
-      <label for="camera-select">Selecciona la cámara:</label>
-      <select id="camera-select">
-        <option value="rear">Cámara trasera</option>
-        <option value="front">Cámara frontal</option>
-      </select>
-    </div>
-
     <a-scene
       embedded
       loading-screen="enabled: false;"
@@ -40,15 +15,22 @@
       <a-assets timeout="10000" id="assets-container">
         <!-- Los modelos se cargarán dinámicamente aquí -->
       </a-assets>
-      <a-camera gps-camera rotation-reader></a-camera>
+
+      <a-camera id="camera" gps-camera rotation-reader></a-camera>
     </a-scene>
 
+    <!-- ComboBox para seleccionar cámara -->
+    <select id="camera-selector">
+      <option value="0">Cámara trasera</option>
+      <option value="1">Cámara delantera</option>
+    </select>
+
     <script>
-      // Función para cargar los modelos
       async function loadModels() {
         try {
-          const response = await fetch("models.json");
+          const response = await fetch("models.json"); 
           const models = await response.json();
+
           const assetsContainer = document.querySelector("#assets-container");
           const scene = document.querySelector("a-scene");
 
@@ -72,53 +54,41 @@
         }
       }
 
-      // Función para manejar el cambio de cámara
-      function handleCameraChange() {
-        const cameraSelect = document.getElementById("camera-select");
-        const selectedCamera = cameraSelect.value;
+      // Función para enumerar las cámaras disponibles
+      function enumerateCameras() {
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          const selector = document.getElementById("camera-selector");
 
-        // Guardar la selección en localStorage para mantenerla después de la recarga
-        localStorage.setItem("selectedCamera", selectedCamera);
+          // Limpiar las opciones previas
+          selector.innerHTML = '';
 
-        // Recargar la página con el parámetro de cámara en la URL
-        window.location.search = `?camera=${selectedCamera}`;
+          // Añadir las cámaras disponibles al combo
+          videoDevices.forEach((device, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.text = device.label || `Cámara ${index + 1}`;
+            selector.appendChild(option);
+          });
+
+          // Asignar la cámara por defecto
+          selector.value = 0;
+        });
       }
 
-      // Obtener la cámara seleccionada de la URL o localStorage
-      function getSelectedCamera() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const cameraFromUrl = urlParams.get("camera");
-        if (cameraFromUrl) {
-          return cameraFromUrl;
-        }
-        return localStorage.getItem("selectedCamera") || "rear"; // Valor predeterminado: "rear"
+      // Función para cambiar la cámara al seleccionar una nueva opción
+      function switchCamera() {
+        const selectedCameraIndex = document.getElementById("camera-selector").value;
+        
+        // Aquí se puede hacer que se recargue la página para cambiar la cámara seleccionada
+        window.location.reload();
       }
 
-      // Configurar AR.js con la cámara seleccionada
-      function setupARJS() {
-        const selectedCamera = getSelectedCamera();
-        const arjsSystem = document.querySelector("a-scene").systems.arjs;
+      // Detecta las cámaras disponibles y asigna el evento al selector
+      enumerateCameras();
+      document.getElementById("camera-selector").addEventListener("change", switchCamera);
 
-        // Establecer la cámara en AR.js
-        if (selectedCamera === "front") {
-          arjsSystem.arSessionSettings.cameraDirection = "FRONT";
-        } else {
-          arjsSystem.arSessionSettings.cameraDirection = "BACK";
-        }
-
-        // Actualizar el combobox con la cámara seleccionada
-        const cameraSelect = document.getElementById("camera-select");
-        cameraSelect.value = selectedCamera;
-
-        // Escuchar cambios en el combobox
-        cameraSelect.addEventListener("change", handleCameraChange);
-      }
-
-      // Inicializar la aplicación
-      window.onload = () => {
-        loadModels();
-        setupARJS();
-      };
+      loadModels();
     </script>
   </body>
 </html>

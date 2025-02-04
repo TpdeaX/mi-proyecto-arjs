@@ -1,0 +1,30 @@
+[
+    {
+      "id": "duck-model",
+      "src": "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Duck/glTF-Binary/Duck.glb",
+      "latitude": -8.38392028,
+      "longitude": -74.53214146,
+      "scale": "1 1 1"
+    },
+    {
+      "id": "box-model",
+      "src": "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Box/glTF-Binary/Box.glb",
+      "latitude": -8.383925,
+      "longitude": -74.53215,
+      "scale": "1.5 1.5 1.5"
+    },
+    {
+      "id": "sphere-model",
+      "src": "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/CesiumMan/glTF-Binary/CesiumMan.glb",
+      "latitude": -8.383619991786283,
+      "longitude": -74.53252717601482,
+      "scale": "2 2 2"
+    },
+    {
+      "id": "fox-model",
+      "src": "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Fox/glTF-Binary/Fox.glb",
+      "latitude": -8.399784982557039,
+      "longitude": -74.57542011341545,
+      "scale": "2 2 2"
+    }
+  ]

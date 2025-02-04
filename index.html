@@ -5,32 +5,58 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
+    <style>
+      #cameraSelector {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 9999;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 4px;
+      }
+    </style>
   </head>
   <body>
-    <a-scene
-      embedded
-      loading-screen="enabled: false;"
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-    >
-      <a-assets timeout="10000" id="assets-container">
-        <!-- Los modelos se cargarán dinámicamente aquí -->
-      </a-assets>
-
-      <a-camera id="camera" gps-camera rotation-reader></a-camera>
-    </a-scene>
-
-    <!-- ComboBox para seleccionar cámara -->
-    <select id="camera-selector">
-      <option value="0">Cámara trasera</option>
-      <option value="1">Cámara delantera</option>
+    <select id="cameraSelector">
+      <option value="" disabled selected>Cargando cámaras...</option>
     </select>
 
+    <div id="sceneContainer"></div>
+
     <script>
+      // Configuración inicial
+      const storedCameraId = localStorage.getItem('selectedCameraId');
+      const arjsConfig = `sourceType: webcam; 
+                        debugUIEnabled: false; 
+                        ${storedCameraId ? `deviceId: ${storedCameraId};` : ''}`;
+
+      // Crear escena dinámicamente
+      const scene = document.createElement('a-scene');
+      scene.setAttribute('embedded', '');
+      scene.setAttribute('loading-screen', 'enabled: false;');
+      scene.setAttribute('arjs', arjsConfig);
+
+      // Assets container
+      const assets = document.createElement('a-assets');
+      assets.setAttribute('timeout', '10000');
+      assets.setAttribute('id', 'assets-container');
+      scene.appendChild(assets);
+
+      // Cámara AR
+      const camera = document.createElement('a-camera');
+      camera.setAttribute('gps-camera', '');
+      camera.setAttribute('rotation-reader', '');
+      scene.appendChild(camera);
+
+      // Añadir escena al DOM
+      document.getElementById('sceneContainer').appendChild(scene);
+
+      // Cargar modelos 3D
       async function loadModels() {
         try {
-          const response = await fetch("models.json"); 
+          const response = await fetch("models.json");
           const models = await response.json();
-
           const assetsContainer = document.querySelector("#assets-container");
           const scene = document.querySelector("a-scene");
 
@@ -50,45 +76,44 @@
             scene.appendChild(entity);
           });
         } catch (error) {
-          console.error("Error al cargar los modelos:", error);
+          console.error("Error al cargar modelos:", error);
         }
       }
 
-      // Función para enumerar las cámaras disponibles
-      function enumerateCameras() {
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-          const videoDevices = devices.filter(device => device.kind === 'videoinput');
-          const selector = document.getElementById("camera-selector");
-
-          // Limpiar las opciones previas
+      // Enumerar cámaras disponibles
+      async function setupCameraSelector() {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(d => d.kind === 'videoinput');
+          const selector = document.getElementById('cameraSelector');
+          
           selector.innerHTML = '';
-
-          // Añadir las cámaras disponibles al combo
-          videoDevices.forEach((device, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.text = device.label || `Cámara ${index + 1}`;
+          videoDevices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Cámara ${selector.options.length + 1}`;
             selector.appendChild(option);
           });
 
-          // Asignar la cámara por defecto
-          selector.value = 0;
-        });
+          if (storedCameraId) {
+            selector.value = storedCameraId;
+          }
+        } catch (error) {
+          console.error("Error al acceder a cámaras:", error);
+        }
       }
 
-      // Función para cambiar la cámara al seleccionar una nueva opción
-      function switchCamera() {
-        const selectedCameraIndex = document.getElementById("camera-selector").value;
-        
-        // Aquí se puede hacer que se recargue la página para cambiar la cámara seleccionada
+      // Manejar cambio de cámara
+      document.getElementById('cameraSelector').addEventListener('change', (e) => {
+        localStorage.setItem('selectedCameraId', e.target.value);
         window.location.reload();
-      }
+      });
 
-      // Detecta las cámaras disponibles y asigna el evento al selector
-      enumerateCameras();
-      document.getElementById("camera-selector").addEventListener("change", switchCamera);
-
-      loadModels();
+      // Inicializar
+      window.addEventListener('DOMContentLoaded', () => {
+        setupCameraSelector();
+        loadModels();
+      });
     </script>
   </body>
 </html>

@@ -6,21 +6,35 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
     <style>
-      #cameraSelector {
+      .controls {
         position: fixed;
         top: 10px;
         left: 10px;
         z-index: 9999;
-        padding: 8px;
-        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        gap: 8px;
+      }
+      .control-btn {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ccc;
         border-radius: 4px;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+      select.control-btn {
+        min-width: 120px;
       }
     </style>
   </head>
   <body>
-    <select id="cameraSelector">
-      <option value="" disabled selected>Cargando cámaras...</option>
-    </select>
+    <div class="controls">
+      <select id="cameraSelector" class="control-btn">
+        <option value="" disabled selected>Cargando cámaras...</option>
+      </select>
+      <button id="arButton" class="control-btn">Iniciar AR</button>
+    </div>
 
     <div id="sceneContainer"></div>
 
@@ -36,6 +50,7 @@
       scene.setAttribute('embedded', '');
       scene.setAttribute('loading-screen', 'enabled: false;');
       scene.setAttribute('arjs', arjsConfig);
+      scene.setAttribute('vr-mode-ui', 'enabled: false'); // Deshabilitar botón por defecto
 
       // Assets container
       const assets = document.createElement('a-assets');
@@ -79,6 +94,15 @@
           console.error("Error al cargar modelos:", error);
         }
       }
+
+      // Controlador del botón AR
+      document.getElementById('arButton').addEventListener('click', () => {
+        const scene = document.querySelector('a-scene');
+        if (scene) {
+          // Método nativo de A-Frame para activar VR/AR
+          scene.enterVR();
+        }
+      });
 
       // Enumerar cámaras disponibles
       async function setupCameraSelector() {

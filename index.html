@@ -5,74 +5,96 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
+    <style>
+      #switchCamera {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #000;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
   </head>
-  <body style="margin: 0; overflow: hidden">
-    <a-scene
-      embedded
-      loading-screen="enabled: false;"
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-    >
-      <a-assets timeout="10000" id="assets-container">
-        <!-- Los modelos se cargarán dinámicamente aquí -->
-      </a-assets>
-
-      <a-camera gps-camera rotation-reader></a-camera>
-    </a-scene>
+  <body>
+    <button id="switchCamera" onclick="toggleCamera()">Cambiar Cámara</button>
 
     <script>
-      const models = [
-        {
-          id: "duck-model",
-          src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Duck/glTF-Binary/Duck.glb",
-          latitude: -8.38392028,
-          longitude: -74.53214146,
-          scale: "1 1 1",
-        },
-        {
-          id: "box-model",
-          src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Box/glTF-Binary/Box.glb",
-          latitude: -8.383925,
-          longitude: -74.53215,
-          scale: "1.5 1.5 1.5",
-        },
-        {
-          id: "sphere-model",
-          src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/CesiumMan/glTF-Binary/CesiumMan.glb",
-          latitude: -8.383619991786283,
-          longitude: -74.53252717601482,
-          scale: "2 2 2",
-        },
-        {
-          id: "fox-model",
-          src: "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/Fox/glTF-Binary/Fox.glb",
-          latitude: -8.399784982557039,
-          longitude: -74.57542011341545,
-          scale: "0.2 0.2 0.2",
-        },
-      ];
+      // Configurar la cámara basado en el parámetro de URL
+      function setupScene() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cameraType = urlParams.get('camera');
+        const facingMode = cameraType === 'front' ? 'user' : 'environment';
 
-      // Get the assets and scene elements
-      const assetsContainer = document.querySelector("#assets-container");
-      const scene = document.querySelector("a-scene");
+        const scene = document.createElement('a-scene');
+        scene.setAttribute('embedded', '');
+        scene.setAttribute('loading-screen', 'enabled: false;');
+        scene.setAttribute('arjs', 
+          `sourceType: webcam; 
+          sourceUrl: video?facingMode=${facingMode}; 
+          debugUIEnabled: false;`);
 
-      // Add assets and entities dynamically
-      models.forEach((item) => {
-        // Create asset
-        const asset = document.createElement("a-asset-item");
-        asset.setAttribute("id", item.id);
-        asset.setAttribute("src", item.src);
-        assetsContainer.appendChild(asset);
+        const assets = document.createElement('a-assets');
+        assets.setAttribute('timeout', '10000');
+        assets.setAttribute('id', 'assets-container');
+        
+        const camera = document.createElement('a-camera');
+        camera.setAttribute('gps-camera', '');
+        camera.setAttribute('rotation-reader', '');
 
-        // Create entity
-        const entity = document.createElement("a-entity");
-        entity.setAttribute("gltf-model", `#${item.id}`);
-        entity.setAttribute(
-          "gps-entity-place",
-          `latitude: ${item.latitude}; longitude: ${item.longitude};`
-        );
-        entity.setAttribute("scale", item.scale);
-        scene.appendChild(entity);
-      });
+        scene.appendChild(assets);
+        scene.appendChild(camera);
+        document.body.appendChild(scene);
+
+        loadModels();
+      }
+
+      async function loadModels() {
+        try {
+          const response = await fetch("models.json");
+          const models = await response.json();
+          const assetsContainer = document.querySelector("#assets-container");
+          const scene = document.querySelector("a-scene");
+
+          models.forEach((item) => {
+            const asset = document.createElement("a-asset-item");
+            asset.setAttribute("id", item.id);
+            asset.setAttribute("src", item.src);
+            assetsContainer.appendChild(asset);
+
+            const entity = document.createElement("a-entity");
+            entity.setAttribute("gltf-model", `#${item.id}`);
+            entity.setAttribute(
+              "gps-entity-place",
+              `latitude: ${item.latitude}; longitude: ${item.longitude};`
+            );
+            entity.setAttribute("scale", item.scale);
+            scene.appendChild(entity);
+          });
+        } catch (error) {
+          console.error("Error al cargar los modelos:", error);
+        }
+      }
+
+      function toggleCamera() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentCamera = urlParams.get('camera');
+        
+        if (currentCamera === 'front') {
+          urlParams.delete('camera');
+        } else {
+          urlParams.set('camera', 'front');
+        }
+        
+        // Recargar la página con los nuevos parámetros
+        window.location.search = urlParams.toString();
+      }
+
+      // Inicializar la escena cuando el documento esté listo
+      document.addEventListener('DOMContentLoaded', setupScene);
     </script>
   </body>
 </html>

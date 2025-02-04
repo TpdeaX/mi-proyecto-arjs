@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
     <style>
@@ -23,61 +23,88 @@
 
     <script>
       let currentScene = null;
-      
+      let arStream = null;
+
       async function setupScene() {
-        // Destruir escena anterior si existe
         if (currentScene) {
           currentScene.parentNode.removeChild(currentScene);
+          if (arStream) {
+            arStream.getTracks().forEach(track => track.stop());
+          }
         }
-        
-        // Obtener parámetro de cámara
+
         const urlParams = new URLSearchParams(window.location.search);
         const cameraType = urlParams.get('camera');
         const facingMode = cameraType === 'front' ? 'user' : 'environment';
-        
+
         // 1. Listar cámaras disponibles
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
           const videoDevices = devices.filter(device => device.kind === 'videoinput');
-          console.log('Cámaras disponibles:', videoDevices);
+          console.log('Cámaras detectadas:', videoDevices);
         } catch (error) {
           console.error('Error al listar cámaras:', error);
         }
 
         // 2. Crear nueva escena
         const scene = document.createElement('a-scene');
-        scene.innerHTML = `
-          <a-assets timeout="10000" id="assets-container"></a-assets>
-          <a-camera gps-camera rotation-reader></a-camera>
-        `;
-        
-        // Configurar AR.js con parámetros de cámara
+        scene.setAttribute('embedded', '');
+        scene.setAttribute('loading-screen', 'enabled: false;');
         scene.setAttribute('arjs', `
           sourceType: webcam;
-          sourceOptions: {
-            video: {
-              facingMode: "${facingMode}",
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            }
-          };
           debugUIEnabled: true;
         `);
 
+        // 3. Configuración de cámara
+        const camera = document.createElement('a-camera');
+        camera.setAttribute('gps-camera', '');
+        camera.setAttribute('rotation-reader', '');
+
+        scene.appendChild(camera);
         document.body.appendChild(scene);
         currentScene = scene;
 
-        // 3. Verificar constraints reales
+        // 4. Inicializar manualmente la fuente de video
         const arjsSys = scene.systems['arjs'];
-        arjsSys._arSource.onResize(() => {
-          const stream = arjsSys._arSource.stream;
-          const track = stream.getVideoTracks()[0];
-          console.log('Configuración real de la cámara:', track.getSettings());
-        });
+        const oldSource = arjsSys._arSource;
+        
+        try {
+          arStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { exact: facingMode },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
+          
+          arjsSys._arSource = new THREEx.ArToolkitSource({
+            sourceType: 'webcam',
+            sourceUrl: arStream
+          });
+          
+          arjsSys._arSource.init(() => {
+            arjsSys._arSource.onResize();
+            arjsSys._arContext = new THREEx.ArToolkitContext({
+              cameraParametersUrl: 'https://arjs-cors-proxy.herokuapp.com/https://raw.githubusercontent.com/AR-js-org/AR.js/master/aframe/data/data/camera_para.dat',
+              detectionMode: 'mono'
+            });
+            arjsSys._arContext.init(() => {
+              arjsSys._arContext.arController.setPatternDetectionMode(artoolkit.AR_TEMPLATE_MATCHING_MONO);
+            });
+          });
+
+          // 5. Verificar configuración real
+          const track = arStream.getVideoTracks()[0];
+          console.log('Configuración aplicada:', track.getSettings());
+
+        } catch (error) {
+          console.error('Error al acceder a la cámara:', error);
+        }
 
         loadModels();
       }
 
+      // ... (loadModels y toggleCamera permanecen iguales)
       async function loadModels() {
         try {
           const response = await fetch("models.json");

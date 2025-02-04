@@ -26,114 +26,111 @@
       let currentStream = null;
 
       async function initializeARScene(facingMode) {
-        // 1. Limpiar escena anterior
-        if (currentScene) {
-          currentScene.parentNode.removeChild(currentScene);
-        }
-        if (currentStream) {
-          currentStream.getTracks().forEach(track => track.stop());
-        }
+  // Clean up previous scene and stream
+  if (currentScene) {
+    currentScene.parentNode.removeChild(currentScene);
+  }
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+  }
 
-        // 2. Crear nueva escena
-        const scene = document.createElement('a-scene');
-        scene.setAttribute('embedded', '');
-        scene.setAttribute('arjs', `
-          sourceType: webcam;
-          debugUIEnabled: false;
-        `);
+  // Create new scene
+  const scene = document.createElement('a-scene');
+  scene.setAttribute('embedded', '');
+  scene.setAttribute('arjs', `
+    sourceType: webcam;
+    debugUIEnabled: false;
+  `);
 
-        // 3. Configurar cámara GPS
-        const camera = document.createElement('a-camera');
-        camera.setAttribute('gps-camera', '');
-        camera.setAttribute('rotation-reader', '');
+  // Add camera and assets
+  const camera = document.createElement('a-camera');
+  camera.setAttribute('gps-camera', '');
+  camera.setAttribute('rotation-reader', '');
 
-        // 4. Configurar assets
-        const assets = document.createElement('a-assets');
-        assets.setAttribute('timeout', '10000');
-        
-        scene.appendChild(assets);
-        scene.appendChild(camera);
-        document.body.appendChild(scene);
-        currentScene = scene;
+  const assets = document.createElement('a-assets');
+  assets.setAttribute('timeout', '10000');
 
-        // 5. Obtener stream de video manualmente
-        try {
-          currentStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { exact: facingMode },
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            }
-          });
-          
-          // 6. Forzar actualización de la fuente de video en AR.js
-          const arjsSys = scene.systems['arjs'];
-          arjsSys._arSource = new THREEx.ArToolkitSource({
-            sourceType: 'webcam',
-            sourceUrl: currentStream
-          });
-          
-          // 7. Inicialización manual
-          arjsSys._arSource.init(() => {
-            arjsSys._arSource.onResize();
-            arjsSys._arContext.init(() => {
-              scene.emit('arjs-video-loaded', {
-                component: arjsSys._arSource
-              });
-            });
-          });
+  scene.appendChild(assets);
+  scene.appendChild(camera);
+  document.body.appendChild(scene);
+  currentScene = scene;
 
-          // 8. Cargar modelos
-          loadModels();
-          
-          // 9. Log de configuración
-          const track = currentStream.getVideoTracks()[0];
-          console.log('Configuración actual:', {
-            facingMode: track.getSettings().facingMode,
-            deviceId: track.getSettings().deviceId
-          });
-
-        } catch (error) {
-          console.error('Error al acceder a la cámara:', error);
-        }
+  // Access camera stream
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { exact: facingMode },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
+    });
 
+    // Update AR.js video source
+    const arjsSys = scene.systems['arjs'];
+    arjsSys._arSource = new THREEx.ArToolkitSource({
+      sourceType: 'webcam',
+      sourceUrl: currentStream
+    });
+
+    arjsSys._arSource.init(() => {
+      arjsSys._arSource.onResize();
+      arjsSys._arContext.init(() => {
+        scene.emit('arjs-video-loaded', {
+          component: arjsSys._arSource
+        });
+      });
+    });
+
+    // Load models
+    loadModels();
+
+    // Log camera settings
+    const track = currentStream.getVideoTracks()[0];
+    console.log('Configuración actual:', {
+      facingMode: track.getSettings().facingMode,
+      deviceId: track.getSettings().deviceId
+    });
+  } catch (error) {
+    console.error('Error al acceder a la cámara:', error);
+  }
+}
+
+      
       async function loadModels() {
-        try {
-          const response = await fetch("models.json");
-          const models = await response.json();
-          const assets = currentScene.querySelector('a-assets');
+  try {
+    const response = await fetch("models.json");
+    const models = await response.json();
+    const assets = currentScene.querySelector('a-assets');
+    models.forEach((item) => {
+      const asset = document.createElement("a-asset-item");
+      asset.setAttribute("id", item.id);
+      asset.setAttribute("src", item.src);
+      assets.appendChild(asset);
 
-          models.forEach((item) => {
-            const asset = document.createElement("a-asset-item");
-            asset.setAttribute("id", item.id);
-            asset.setAttribute("src", item.src);
-            assets.appendChild(asset);
-
-            const entity = document.createElement("a-entity");
-            entity.setAttribute("gltf-model", `#${item.id}`);
-            entity.setAttribute("gps-entity-place", `latitude: ${item.latitude}; longitude: ${item.longitude};`);
-            entity.setAttribute("scale", item.scale);
-            currentScene.appendChild(entity);
-          });
-        } catch (error) {
-          console.error("Error al cargar modelos:", error);
-        }
-      }
+      const entity = document.createElement("a-entity");
+      entity.setAttribute("gltf-model", `#${item.id}`);
+      entity.setAttribute("gps-entity-place", `latitude: ${item.latitude}; longitude: ${item.longitude};`);
+      entity.setAttribute("scale", item.scale);
+      currentScene.appendChild(entity);
+    });
+  } catch (error) {
+    console.error("Error al cargar modelos:", error);
+  }
+}
 
       function toggleCamera() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const newMode = urlParams.get('camera') === 'front' ? 'environment' : 'user';
-        urlParams.set('camera', newMode === 'user' ? 'front' : '');
-        window.location.search = urlParams.toString();
-      }
+  const urlParams = new URLSearchParams(window.location.search);
+  const newMode = urlParams.get('camera') === 'front' ? 'environment' : 'user';
+  urlParams.set('camera', newMode === 'user' ? 'front' : '');
+  window.location.search = urlParams.toString();
+}
 
       // Inicialización inicial
       document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const cameraMode = urlParams.get('camera') === 'front' ? 'user' : 'environment';
-        initializeARScene(cameraMode);
-      });
+  const urlParams = new URLSearchParams(window.location.search);
+  const cameraMode = urlParams.get('camera') === 'front' ? 'user' : 'environment';
+  initializeARScene(cameraMode);
+});
     </script>
   </body>
 </html>

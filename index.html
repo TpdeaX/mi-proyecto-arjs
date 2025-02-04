@@ -26,7 +26,7 @@
       let currentStream = null;
 
       async function initializeARScene(facingMode) {
-  // Clean up previous scene and stream
+  // Limpiar escena anterior
   if (currentScene) {
     currentScene.parentNode.removeChild(currentScene);
   }
@@ -34,7 +34,7 @@
     currentStream.getTracks().forEach(track => track.stop());
   }
 
-  // Create new scene
+  // Crear nueva escena
   const scene = document.createElement('a-scene');
   scene.setAttribute('embedded', '');
   scene.setAttribute('arjs', `
@@ -42,11 +42,12 @@
     debugUIEnabled: false;
   `);
 
-  // Add camera and assets
+  // Configurar cámara GPS
   const camera = document.createElement('a-camera');
   camera.setAttribute('gps-camera', '');
   camera.setAttribute('rotation-reader', '');
 
+  // Configurar assets
   const assets = document.createElement('a-assets');
   assets.setAttribute('timeout', '10000');
 
@@ -55,7 +56,7 @@
   document.body.appendChild(scene);
   currentScene = scene;
 
-  // Access camera stream
+  // Obtener stream de video
   try {
     currentStream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -65,36 +66,19 @@
       }
     });
 
-    // Update AR.js video source
-    const arjsSys = scene.systems['arjs'];
-    arjsSys._arSource = new THREEx.ArToolkitSource({
-      sourceType: 'webcam',
-      sourceUrl: currentStream
-    });
-
-    arjsSys._arSource.init(() => {
-      arjsSys._arSource.onResize();
-      arjsSys._arContext.init(() => {
-        scene.emit('arjs-video-loaded', {
-          component: arjsSys._arSource
-        });
-      });
-    });
-
-    // Load models
-    loadModels();
-
-    // Log camera settings
+    // Log de configuración
     const track = currentStream.getVideoTracks()[0];
     console.log('Configuración actual:', {
       facingMode: track.getSettings().facingMode,
       deviceId: track.getSettings().deviceId
     });
+
+    // Cargar modelos
+    loadModels();
   } catch (error) {
     console.error('Error al acceder a la cámara:', error);
   }
 }
-
       
       async function loadModels() {
   try {

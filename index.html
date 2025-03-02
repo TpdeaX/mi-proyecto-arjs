@@ -10,7 +10,7 @@
         position: fixed;
         top: 10px;
         right: 10px;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0, 0, 0, 0.7);
         color: white;
         padding: 15px;
         border-radius: 5px;
@@ -27,39 +27,51 @@
       <ul id="lista-modelos"></ul>
     </div>
 
-    <a-scene embedded loading-screen="enabled: false;" arjs="sourceType: webcam; debugUIEnabled: true;">
+    <a-scene
+      embedded
+      loading-screen="enabled: false;"
+      arjs="sourceType: webcam; debugUIEnabled: true;"
+    >
       <a-assets timeout="10000" id="assets-container"></a-assets>
       <a-camera gps-camera rotation-reader></a-camera>
-      <a-entity geometry="primitive: axis" material="color: red" scale="2 2 2" position="0 0 -5" visible="true"></a-entity>
+      <a-entity
+        geometry="primitive: axis"
+        material="color: red"
+        scale="2 2 2"
+        position="0 0 -5"
+        visible="true"
+      ></a-entity>
     </a-scene>
 
     <script>
       const APP_CONFIG = {
-        API_URL: 'https://8c99-179-6-105-29.ngrok-free.app'  // Actualizar solo aquí
+        API_URL: "https://8c99-179-6-105-29.ngrok-free.app", // Actualizar solo aquí
       };
 
       async function cargarModelos() {
         try {
-          const debugPanel = document.getElementById('estado-carga');
-          const listaModelos = document.getElementById('lista-modelos');
-          
-          debugPanel.textContent = 'Conectando al servidor...';
-          
+          const debugPanel = document.getElementById("estado-carga");
+          const listaModelos = document.getElementById("lista-modelos");
+
+          debugPanel.textContent = "Conectando al servidor...";
+
           const respuesta = await fetch(`${APP_CONFIG.API_URL}/modelos`, {
-            mode: 'cors',
+            mode: "cors",
             headers: {
-              'Content-Type': 'application/json',
-              'ngrok-skip-browser-warning': 'true'
-            }
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+            referrerPolicy: "no-referrer",
+            credentials: "omit",
           });
-          
+
           if (!respuesta.ok) throw new Error(`Error HTTP ${respuesta.status}`);
-          
-          debugPanel.textContent = 'Procesando datos...';
+
+          debugPanel.textContent = "Procesando datos...";
           const modelos = await respuesta.json();
-          
+
           if (modelos.length === 0) {
-            debugPanel.textContent = 'No se encontraron modelos';
+            debugPanel.textContent = "No se encontraron modelos";
             return;
           }
 
@@ -67,10 +79,12 @@
           const escena = document.querySelector("a-scene");
 
           modelos.forEach((modelo) => {
-            const li = document.createElement('li');
+            const li = document.createElement("li");
             li.innerHTML = `
               <strong>${modelo.id}</strong><br>
-              Posición: ${modelo.latitud.toFixed(6)}, ${modelo.longitud.toFixed(6)}<br>
+              Posición: ${modelo.latitud.toFixed(6)}, ${modelo.longitud.toFixed(
+              6
+            )}<br>
               Escala: ${modelo.escala.x}, ${modelo.escala.y}, ${modelo.escala.z}
             `;
             listaModelos.appendChild(li);
@@ -78,45 +92,55 @@
             const asset = document.createElement("a-asset-item");
             asset.setAttribute("id", modelo.id);
             asset.setAttribute("src", modelo.fuente);
-            
-            asset.addEventListener('loaded', () => {
-              li.style.color = 'lightgreen';
-              li.innerHTML += '<br>✅ Modelo cargado';
+
+            asset.addEventListener("loaded", () => {
+              li.style.color = "lightgreen";
+              li.innerHTML += "<br>✅ Modelo cargado";
             });
-            
-            asset.addEventListener('error', (err) => {
-              li.style.color = 'red';
-              li.innerHTML += '<br>❌ Error cargando modelo';
+
+            asset.addEventListener("error", (err) => {
+              li.style.color = "red";
+              li.innerHTML += "<br>❌ Error cargando modelo";
             });
 
             contenedorAssets.appendChild(asset);
 
             const entidad = document.createElement("a-entity");
             entidad.setAttribute("gltf-model", `#${modelo.id}`);
-            entidad.setAttribute("gps-entity-place", `latitude: ${modelo.latitud}; longitude: ${modelo.longitud};`);
-            entidad.setAttribute("scale", `${modelo.escala.x} ${modelo.escala.y} ${modelo.escala.z}`);
-            
-            entidad.addEventListener('model-loaded', () => {
-              entidad.setAttribute('visible', 'true');
-              entidad.setAttribute('animation', 'property: scale; to: 1.1 1.1 1.1; dur: 1000; loop: true');
+            entidad.setAttribute(
+              "gps-entity-place",
+              `latitude: ${modelo.latitud}; longitude: ${modelo.longitud};`
+            );
+            entidad.setAttribute(
+              "scale",
+              `${modelo.escala.x} ${modelo.escala.y} ${modelo.escala.z}`
+            );
+
+            entidad.addEventListener("model-loaded", () => {
+              entidad.setAttribute("visible", "true");
+              entidad.setAttribute(
+                "animation",
+                "property: scale; to: 1.1 1.1 1.1; dur: 1000; loop: true"
+              );
             });
 
             escena.appendChild(entidad);
           });
 
-          debugPanel.textContent = 'Carga completa';
-          
+          debugPanel.textContent = "Carga completa";
+
           setTimeout(() => {
-            const entidades = document.querySelectorAll('[gps-entity-place]');
-            entidades.forEach(entidad => {
-              if (!entidad.getObject3D('mesh')) {
-                console.warn('Entidad sin modelo:', entidad.getAttribute('id'));
+            const entidades = document.querySelectorAll("[gps-entity-place]");
+            entidades.forEach((entidad) => {
+              if (!entidad.getObject3D("mesh")) {
+                console.warn("Entidad sin modelo:", entidad.getAttribute("id"));
               }
             });
           }, 5000);
-
         } catch (error) {
-          document.getElementById('estado-carga').textContent = `Error: ${error.message}`;
+          document.getElementById(
+            "estado-carga"
+          ).textContent = `Error: ${error.message}`;
           setTimeout(cargarModelos, 5000);
         }
       }

@@ -82,6 +82,8 @@
           const contenedorAssets = document.querySelector("#assets-container");
           const escena = document.querySelector("a-scene");
 
+          alert(JSON.stringify(modelos));
+
           modelos.forEach((modelo) => {
             const li = document.createElement("li");
             li.innerHTML = `

@@ -34,13 +34,17 @@
     >
       <a-assets timeout="10000" id="assets-container"></a-assets>
       <a-camera gps-camera rotation-reader></a-camera>
-      <a-entity
-        geometry="primitive: axis"
-        material="color: red"
-        scale="2 2 2"
-        position="0 0 -5"
-        visible="true"
-      ></a-entity>
+      <a-entity position="0 0 -5">
+        <a-entity geometry="primitive: cylinder; height: 4; radius: 0.05" 
+                  material="color: red"
+                  rotation="0 0 -90"></a-entity>
+        <a-entity geometry="primitive: cylinder; height: 4; radius: 0.05" 
+                  material="color: green"
+                  rotation="0 0 0"></a-entity>
+        <a-entity geometry="primitive: cylinder; height: 4; radius: 0.05" 
+                  material="color: blue"
+                  rotation="90 0 0"></a-entity>
+      </a-entity>
     </a-scene>
 
     <script>

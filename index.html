@@ -105,10 +105,11 @@
             });
 
             asset.addEventListener("error", (err) => {
+              console.error("Error cargando modelo:", err); // ← Agrega este log
               li.style.color = "red";
               li.innerHTML += "<br>❌ Error cargando modelo";
             });
-
+            
             contenedorAssets.appendChild(asset);
 
             const entidad = document.createElement("a-entity");

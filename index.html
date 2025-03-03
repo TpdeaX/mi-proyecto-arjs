@@ -85,6 +85,8 @@
           console.log(JSON.stringify(modelos));
 
           modelos.forEach((modelo) => {
+            console.log("Intentando cargar modelo desde:", modelo.fuente); // ← Agrega este log
+
             const li = document.createElement("li");
             li.innerHTML = `
               <strong>${modelo.id}</strong><br>
@@ -100,16 +102,31 @@
             asset.setAttribute("src", modelo.fuente);
 
             asset.addEventListener("loaded", () => {
+              console.log("Modelo cargado correctamente:", {
+                id: modelo.id,
+                url: modelo.fuente,
+                asset: asset  // Se muestra el elemento cargado o más información si es necesario
+              });
               li.style.color = "lightgreen";
               li.innerHTML += "<br>✅ Modelo cargado";
+              
+              // Aquí se puede añadir cualquier lógica adicional al cargar el objeto.
+              // Por ejemplo, si deseas ver algún detalle del objeto cargado:
+              if (asset instanceof HTMLElement) {
+                console.log("Detalles del asset:", asset.outerHTML);
+              }
             });
 
             asset.addEventListener("error", (err) => {
-              console.error("Error cargando modelo:", err); // ← Agrega este log
+              console.error("Error cargando GLB:", {
+                id: modelo.id,
+                url: modelo.fuente,
+                error: err.message // ← Muestra el mensaje de error real
+              });
               li.style.color = "red";
               li.innerHTML += "<br>❌ Error cargando modelo";
             });
-            
+
             contenedorAssets.appendChild(asset);
 
             const entidad = document.createElement("a-entity");

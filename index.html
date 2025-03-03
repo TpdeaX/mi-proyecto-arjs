@@ -16,6 +16,11 @@
         border-radius: 5px;
         z-index: 1000;
         max-width: 300px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      #lista-modelos {
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -26,7 +31,6 @@
       <h4>Modelos cargados:</h4>
       <ul id="lista-modelos"></ul>
     </div>
-
     <a-scene
       embedded
       loading-screen="enabled: false;"
@@ -35,29 +39,36 @@
       <a-assets timeout="10000" id="assets-container"></a-assets>
       <a-camera gps-camera rotation-reader></a-camera>
       <a-entity position="0 0 -5">
-        <a-entity geometry="primitive: cylinder; height: 4; radius: 0.05" 
-                  material="color: red"
-                  rotation="0 0 -90"></a-entity>
-        <a-entity geometry="primitive: cylinder; height: 4; radius: 0.05" 
-                  material="color: green"
-                  rotation="0 0 0"></a-entity>
-        <a-entity geometry="primitive: cylinder; height: 4; radius: 0.05" 
-                  material="color: blue"
-                  rotation="90 0 0"></a-entity>
+        <a-entity
+          geometry="primitive: cylinder; height: 4; radius: 0.05"
+          material="color: red"
+          rotation="0 0 -90"
+        ></a-entity>
+        <a-entity
+          geometry="primitive: cylinder; height: 4; radius: 0.05"
+          material="color: green"
+          rotation="0 0 0"
+        ></a-entity>
+        <a-entity
+          geometry="primitive: cylinder; height: 4; radius: 0.05"
+          material="color: blue"
+          rotation="90 0 0"
+        ></a-entity>
       </a-entity>
     </a-scene>
-
     <script>
       const APP_CONFIG = {
-        API_URL: "https://e27a-179-6-105-29.ngrok-free.app", // Actualizar solo aquí
+        API_URL: "https://e27a-179-6-105-29.ngrok-free.app",
       };
 
       async function cargarModelos() {
+        console.log("[INICIO] Iniciando carga de modelos");
+
         try {
           const debugPanel = document.getElementById("estado-carga");
           const listaModelos = document.getElementById("lista-modelos");
-
           debugPanel.textContent = "Conectando al servidor...";
+          console.log("[FETCH] Solicitando /modelos al servidor");
 
           const respuesta = await fetch(`${APP_CONFIG.API_URL}/modelos`, {
             mode: "cors",
@@ -69,66 +80,65 @@
             credentials: "omit",
           });
 
+          console.log(
+            `[FETCH] Respuesta recibida - Status: ${respuesta.status}`
+          );
+
           if (!respuesta.ok) throw new Error(`Error HTTP ${respuesta.status}`);
 
           debugPanel.textContent = "Procesando datos...";
+          console.log("[PROCESAMIENTO] Parseando JSON de modelos");
           const modelos = await respuesta.json();
 
           if (modelos.length === 0) {
+            console.warn("[AVISO] No se encontraron modelos en la respuesta");
             debugPanel.textContent = "No se encontraron modelos";
             return;
           }
 
           const contenedorAssets = document.querySelector("#assets-container");
           const escena = document.querySelector("a-scene");
-
-          console.log(JSON.stringify(modelos));
+          console.log(`[MODELOS] ${modelos.length} modelos recibidos`, modelos);
 
           modelos.forEach((modelo) => {
-            console.log("Intentando cargar modelo desde:", modelo.fuente); // ← Agrega este log
-
+            console.log(`[MODELO] Procesando modelo ID: ${modelo.id}`);
             const li = document.createElement("li");
-            li.innerHTML = `
-              <strong>${modelo.id}</strong><br>
-              Posición: ${modelo.latitud.toFixed(6)}, ${modelo.longitud.toFixed(
+            li.innerHTML = ` <strong>${
+              modelo.id
+            }</strong><br> Posición: ${modelo.latitud.toFixed(
               6
-            )}<br>
-              Escala: ${modelo.escala.x}, ${modelo.escala.y}, ${modelo.escala.z}
-            `;
-            listaModelos.appendChild(li);
+            )}, ${modelo.longitud.toFixed(6)}<br> Escala: ${modelo.escala.x}, ${
+              modelo.escala.y
+            }, ${modelo.escala.z} `;
 
+            listaModelos.appendChild(li);
             const asset = document.createElement("a-asset-item");
+
             asset.setAttribute("id", modelo.id);
             asset.setAttribute("src", modelo.fuente);
+            console.log(
+              `[ASSET] Creado asset para ${modelo.id} - URL: ${modelo.fuente}`
+            );
 
             asset.addEventListener("loaded", () => {
-              console.log("Modelo cargado correctamente:", {
-                id: modelo.id,
-                url: modelo.fuente,
-                asset: asset  // Se muestra el elemento cargado o más información si es necesario
-              });
+              console.log(`[LOADED] Modelo ${modelo.id} cargado exitosamente`);
               li.style.color = "lightgreen";
               li.innerHTML += "<br>✅ Modelo cargado";
-              
-              // Aquí se puede añadir cualquier lógica adicional al cargar el objeto.
-              // Por ejemplo, si deseas ver algún detalle del objeto cargado:
               if (asset instanceof HTMLElement) {
-                console.log("Detalles del asset:", asset.outerHTML);
+                console.log(`[ASSET-DETALLE] ${asset.outerHTML}`);
               }
             });
 
             asset.addEventListener("error", (err) => {
-              console.error("Error cargando GLB:", {
-                id: modelo.id,
+              console.error(`[ERROR] Fallo al cargar ${modelo.id}`, {
+                error: err.message,
                 url: modelo.fuente,
-                error: err.message // ← Muestra el mensaje de error real
               });
               li.style.color = "red";
               li.innerHTML += "<br>❌ Error cargando modelo";
             });
 
             contenedorAssets.appendChild(asset);
-
             const entidad = document.createElement("a-entity");
             entidad.setAttribute("gltf-model", `#${modelo.id}`);
             entidad.setAttribute(
@@ -139,35 +149,45 @@
               "scale",
               `${modelo.escala.x} ${modelo.escala.y} ${modelo.escala.z}`
             );
-
+            console.log(`[ENTIDAD] Entidad creada para ${modelo.id}`);
             entidad.addEventListener("model-loaded", () => {
+              console.log(
+                `[MODEL-LOADED] Modelo ${modelo.id} renderizado en escena`
+              );
               entidad.setAttribute("visible", "true");
               entidad.setAttribute(
                 "animation",
                 "property: scale; to: 1.1 1.1 1.1; dur: 1000; loop: true"
               );
             });
-
             escena.appendChild(entidad);
+            console.log(`[ESCENA] Entidad ${modelo.id} añadida a la escena`);
           });
 
           debugPanel.textContent = "Carga completa";
+          console.log("[FINAL] Todos los modelos procesados");
 
           setTimeout(() => {
+            console.log("[VERIFICACION] Comprobando entidades sin modelo...");
             const entidades = document.querySelectorAll("[gps-entity-place]");
             entidades.forEach((entidad) => {
               if (!entidad.getObject3D("mesh")) {
-                console.warn("Entidad sin modelo:", entidad.getAttribute("id"));
+                console.warn(
+                  `[ENTIDAD-FALLIDA] ID: ${entidad.getAttribute("id")}`
+                );
               }
             });
           }, 5000);
+          
         } catch (error) {
+          console.error("[ERROR-GLOBAL]", error);
           document.getElementById(
             "estado-carga"
           ).textContent = `Error: ${error.message}`;
           setTimeout(cargarModelos, 5000);
         }
       }
+      console.log("[INICIALIZACION] Llamando a cargarModelos()");
       cargarModelos();
     </script>
   </body>

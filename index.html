@@ -81,9 +81,9 @@
                 "ngrok-skip-browser-warning": "true",
                 "Accept": "application/json"
               },
-              credentials: "include", // Cambiado a "include" para manejar credenciales si es necesario
-              referrerPolicy: "no-referrer-when-downgrade"
+              credentials: "same-origin" // Si no necesitas cookies, o "omit"
             });
+            
 
             console.log(`[FETCH] Respuesta recibida - Status: ${respuesta.status}`);
 

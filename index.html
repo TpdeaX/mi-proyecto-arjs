@@ -75,6 +75,7 @@
 
             const respuesta = await fetch(`${APP_CONFIG.API_URL}/modelos`, {
               mode: "cors",
+              method: 'GET',
               headers: {
                 "Content-Type": "application/json",
                 "ngrok-skip-browser-warning": "true",

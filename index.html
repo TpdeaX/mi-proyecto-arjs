@@ -122,9 +122,9 @@
 
             listaModelos.appendChild(li);
             const asset = document.createElement("a-asset-item");
-
+            asset.crossOrigin = "anonymous"; // Añade esto
             asset.setAttribute("id", modelo.id);
-            asset.setAttribute("src", modelo.fuente);
+            asset.setAttribute("src", modelo.fuente + "?ngrok-skip-browser-warning=69420");
             console.log(
               `[ASSET] Creado asset para ${modelo.id} - URL: ${modelo.fuente}`
             );

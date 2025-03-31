@@ -125,6 +125,7 @@
             asset.crossOrigin = "anonymous"; // Añade esto
             asset.setAttribute("id", modelo.id);
             asset.setAttribute("src", modelo.fuente + "?ngrok-skip-browser-warning=69420");
+            asset.setAttribute("xhr-headers", "ngrok-skip-browser-warning: 69420");
             console.log(
               `[ASSET] Creado asset para ${modelo.id} - URL: ${modelo.fuente}`
             );

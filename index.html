@@ -1,204 +1,206 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
-    <style>
-      #debug-panel {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 15px;
-        border-radius: 5px;
-        z-index: 1000;
-        max-width: 300px;
-        max-height: 80vh;
-        overflow-y: auto;
-      }
-      #lista-modelos {
-        margin-top: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="debug-panel">
-      <h3>Estado de carga:</h3>
-      <div id="estado-carga">Cargando modelos...</div>
-      <h4>Modelos cargados:</h4>
-      <ul id="lista-modelos"></ul>
-    </div>
-    <a-scene
-      embedded
-      loading-screen="enabled: false;"
-      arjs="sourceType: webcam; debugUIEnabled: true;"
-    >
-      <a-assets timeout="10000" id="assets-container"></a-assets>
-      <a-camera gps-camera rotation-reader></a-camera>
-      <a-entity position="0 0 -5">
-        <a-entity
-          geometry="primitive: cylinder; height: 4; radius: 0.05"
-          material="color: red"
-          rotation="0 0 -90"
-        ></a-entity>
-        <a-entity
-          geometry="primitive: cylinder; height: 4; radius: 0.05"
-          material="color: green"
-          rotation="0 0 0"
-        ></a-entity>
-        <a-entity
-          geometry="primitive: cylinder; height: 4; radius: 0.05"
-          material="color: blue"
-          rotation="90 0 0"
-        ></a-entity>
-      </a-entity>
-    </a-scene>
-    <script>
-      // Configuración para usar con Ngrok
-      const APP_CONFIG = {
-        API_URL: "https://29ba-179-6-105-29.ngrok-free.app", // Reemplaza con tu URL de Ngrok
-        MAX_RETRIES: 3,
-        RETRY_DELAY: 2000
-      };
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.min.js"></script>
+      <style>
+        #debug-panel {
+          position: fixed;
+          top: 10px;
+          right: 10px;
+          background: rgba(0, 0, 0, 0.7);
+          color: white;
+          padding: 15px;
+          border-radius: 5px;
+          z-index: 1000;
+          max-width: 300px;
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+        #lista-modelos {
+          margin-top: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="debug-panel">
+        <h3>Estado de carga:</h3>
+        <div id="estado-carga">Cargando modelos...</div>
+        <h4>Modelos cargados:</h4>
+        <ul id="lista-modelos"></ul>
+      </div>
+      <a-scene
+        embedded
+        loading-screen="enabled: false;"
+        arjs="sourceType: webcam; debugUIEnabled: true;"
+      >
+        <a-assets timeout="10000" id="assets-container"></a-assets>
+        <a-camera gps-camera rotation-reader></a-camera>
+        <a-entity position="0 0 -5">
+          <a-entity
+            geometry="primitive: cylinder; height: 4; radius: 0.05"
+            material="color: red"
+            rotation="0 0 -90"
+          ></a-entity>
+          <a-entity
+            geometry="primitive: cylinder; height: 4; radius: 0.05"
+            material="color: green"
+            rotation="0 0 0"
+          ></a-entity>
+          <a-entity
+            geometry="primitive: cylinder; height: 4; radius: 0.05"
+            material="color: blue"
+            rotation="90 0 0"
+          ></a-entity>
+        </a-entity>
+      </a-scene>
+      <script>
+        // Configuración para usar con Ngrok
+        const APP_CONFIG = {
+          API_URL: "https://29ba-179-6-105-29.ngrok-free.app", // Reemplaza con tu URL de Ngrok
+          MAX_RETRIES: 3,
+          RETRY_DELAY: 2000
+        };
 
-      async function cargarModelos(retryCount = 0) {
-        console.log("[INICIO] Iniciando carga de modelos, intento:", retryCount + 1);
+        async function cargarModelos(retryCount = 0) {
+          console.log("[INICIO] Iniciando carga de modelos, intento:", retryCount + 1);
 
-        try {
-          const debugPanel = document.getElementById("estado-carga");
-          const listaModelos = document.getElementById("lista-modelos");
-          debugPanel.textContent = "Conectando al servidor...";
-          console.log("[FETCH] Solicitando /modelos al servidor");
+          try {
+            const debugPanel = document.getElementById("estado-carga");
+            const listaModelos = document.getElementById("lista-modelos");
+            debugPanel.textContent = "Conectando al servidor...";
+            console.log("[FETCH] Solicitando /modelos al servidor");
 
-          const respuesta = await fetch(`${APP_CONFIG.API_URL}/modelos`, {
-            mode: "cors",
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true", // Necesario para evitar advertencias de Ngrok
-              "Access-Control-Allow-Origin": "*" // Permite cualquier origen
-            },
-            referrerPolicy: "no-referrer",
-            credentials: "omit",
-          });
-
-          console.log(`[FETCH] Respuesta recibida - Status: ${respuesta.status}`);
-
-          if (!respuesta.ok) {
-            throw new Error(`Error HTTP ${respuesta.status}`);
-          }
-
-          debugPanel.textContent = "Procesando datos...";
-          console.log("[PROCESAMIENTO] Parseando JSON de modelos");
-          const modelos = await respuesta.json();
-
-          if (modelos.length === 0) {
-            console.warn("[AVISO] No se encontraron modelos en la respuesta");
-            debugPanel.textContent = "No se encontraron modelos";
-            return;
-          }
-
-          const contenedorAssets = document.querySelector("#assets-container");
-          const escena = document.querySelector("a-scene");
-          console.log(`[MODELOS] ${modelos.length} modelos recibidos`, modelos);
-
-          modelos.forEach((modelo) => {
-            console.log(`[MODELO] Procesando modelo ID: ${modelo.id}`);
-            const li = document.createElement("li");
-            li.innerHTML = ` <strong>${
-              modelo.id
-            }</strong><br> Posición: ${modelo.latitud.toFixed(
-              6
-            )}, ${modelo.longitud.toFixed(6)}<br> Escala: ${modelo.escala.x}, ${
-              modelo.escala.y
-            }, ${modelo.escala.z} `;
-
-            listaModelos.appendChild(li);
-            const asset = document.createElement("a-asset-item");
-
-            asset.setAttribute("id", modelo.id);
-            asset.setAttribute("src", modelo.fuente);
-            console.log(
-              `[ASSET] Creado asset para ${modelo.id} - URL: ${modelo.fuente}`
-            );
-
-            asset.addEventListener("loaded", () => {
-              console.log(`[LOADED] Modelo ${modelo.id} cargado exitosamente`);
-              li.style.color = "lightgreen";
-              li.innerHTML += "<br>✅ Modelo cargado";
-              if (asset instanceof HTMLElement) {
-                console.log(`[ASSET-DETALLE] ${asset.outerHTML}`);
-              }
+            const respuesta = await fetch(`${APP_CONFIG.API_URL}/modelos`, {
+              mode: "cors",
+              headers: {
+                "Content-Type": "application/json",
+                "ngrok-skip-browser-warning": "true",
+                "Accept": "application/json"
+              },
+              credentials: "include", // Cambiado a "include" para manejar credenciales si es necesario
+              referrerPolicy: "no-referrer-when-downgrade"
             });
 
-            asset.addEventListener("error", (err) => {
-              console.error(`[ERROR] Fallo al cargar ${modelo.id}`, {
-                error: err.message,
-                url: modelo.fuente,
-              });
-              li.style.color = "red";
-              li.innerHTML += "<br>❌ Error cargando modelo";
-            });
+            console.log(`[FETCH] Respuesta recibida - Status: ${respuesta.status}`);
 
-            contenedorAssets.appendChild(asset);
-            const entidad = document.createElement("a-entity");
-            entidad.setAttribute("gltf-model", `#${modelo.id}`);
-            entidad.setAttribute(
-              "gps-entity-place",
-              `latitude: ${modelo.latitud}; longitude: ${modelo.longitud};`
-            );
-            entidad.setAttribute(
-              "scale",
-              `${modelo.escala.x} ${modelo.escala.y} ${modelo.escala.z}`
-            );
-            console.log(`[ENTIDAD] Entidad creada para ${modelo.id}`);
-            entidad.addEventListener("model-loaded", () => {
+            if (!respuesta.ok) {
+              throw new Error(`Error HTTP ${respuesta.status}`);
+            }
+
+            debugPanel.textContent = "Procesando datos...";
+            console.log("[PROCESAMIENTO] Parseando JSON de modelos");
+            const modelos = await respuesta.json();
+
+            if (modelos.length === 0) {
+              console.warn("[AVISO] No se encontraron modelos en la respuesta");
+              debugPanel.textContent = "No se encontraron modelos";
+              return;
+            }
+
+            const contenedorAssets = document.querySelector("#assets-container");
+            const escena = document.querySelector("a-scene");
+            console.log(`[MODELOS] ${modelos.length} modelos recibidos`, modelos);
+
+            modelos.forEach((modelo) => {
+              console.log(`[MODELO] Procesando modelo ID: ${modelo.id}`);
+              const li = document.createElement("li");
+              li.innerHTML = ` <strong>${
+                modelo.id
+              }</strong><br> Posición: ${modelo.latitud.toFixed(
+                6
+              )}, ${modelo.longitud.toFixed(6)}<br> Escala: ${modelo.escala.x}, ${
+                modelo.escala.y
+              }, ${modelo.escala.z} `;
+
+              listaModelos.appendChild(li);
+              const asset = document.createElement("a-asset-item");
+
+              asset.setAttribute("id", modelo.id);
+              asset.setAttribute("src", modelo.fuente);
               console.log(
-                `[MODEL-LOADED] Modelo ${modelo.id} renderizado en escena`
+                `[ASSET] Creado asset para ${modelo.id} - URL: ${modelo.fuente}`
               );
-              entidad.setAttribute("visible", "true");
+
+              asset.addEventListener("loaded", () => {
+                console.log(`[LOADED] Modelo ${modelo.id} cargado exitosamente`);
+                li.style.color = "lightgreen";
+                li.innerHTML += "<br>✅ Modelo cargado";
+                if (asset instanceof HTMLElement) {
+                  console.log(`[ASSET-DETALLE] ${asset.outerHTML}`);
+                }
+              });
+
+              asset.addEventListener("error", (err) => {
+                console.error(`[ERROR] Fallo al cargar ${modelo.id}`, {
+                  error: err.message,
+                  url: modelo.fuente,
+                });
+                li.style.color = "red";
+                li.innerHTML += "<br>❌ Error cargando modelo";
+              });
+
+              contenedorAssets.appendChild(asset);
+              const entidad = document.createElement("a-entity");
+              entidad.setAttribute("gltf-model", `#${modelo.id}`);
               entidad.setAttribute(
-                "animation",
-                "property: scale; to: 1.1 1.1 1.1; dur: 1000; loop: true"
+                "gps-entity-place",
+                `latitude: ${modelo.latitud}; longitude: ${modelo.longitud};`
               );
-            });
-            escena.appendChild(entidad);
-            console.log(`[ESCENA] Entidad ${modelo.id} añadida a la escena`);
-          });
-
-          debugPanel.textContent = "Carga completa";
-          console.log("[FINAL] Todos los modelos procesados");
-
-          setTimeout(() => {
-            console.log("[VERIFICACION] Comprobando entidades sin modelo...");
-            const entidades = document.querySelectorAll("[gps-entity-place]");
-            entidades.forEach((entidad) => {
-              if (!entidad.getObject3D("mesh")) {
-                console.warn(
-                  `[ENTIDAD-FALLIDA] ID: ${entidad.getAttribute("id")}`
+              entidad.setAttribute(
+                "scale",
+                `${modelo.escala.x} ${modelo.escala.y} ${modelo.escala.z}`
+              );
+              console.log(`[ENTIDAD] Entidad creada para ${modelo.id}`);
+              entidad.addEventListener("model-loaded", () => {
+                console.log(
+                  `[MODEL-LOADED] Modelo ${modelo.id} renderizado en escena`
                 );
-              }
+                entidad.setAttribute("visible", "true");
+                entidad.setAttribute(
+                  "animation",
+                  "property: scale; to: 1.1 1.1 1.1; dur: 1000; loop: true"
+                );
+              });
+              escena.appendChild(entidad);
+              console.log(`[ESCENA] Entidad ${modelo.id} añadida a la escena`);
             });
-          }, 5000);
-          
-        } catch (error) {
-          console.error("[ERROR-GLOBAL]", error);
-          document.getElementById(
-            "estado-carga"
-          ).textContent = `Error: ${error.message}`;
-          
-          if (retryCount < APP_CONFIG.MAX_RETRIES) {
-            console.log(`Reintentando en ${APP_CONFIG.RETRY_DELAY}ms...`);
-            setTimeout(() => cargarModelos(retryCount + 1), APP_CONFIG.RETRY_DELAY);
-          } else {
-            console.error("Número máximo de reintentos alcanzado");
+
+            debugPanel.textContent = "Carga completa";
+            console.log("[FINAL] Todos los modelos procesados");
+
+            setTimeout(() => {
+              console.log("[VERIFICACION] Comprobando entidades sin modelo...");
+              const entidades = document.querySelectorAll("[gps-entity-place]");
+              entidades.forEach((entidad) => {
+                if (!entidad.getObject3D("mesh")) {
+                  console.warn(
+                    `[ENTIDAD-FALLIDA] ID: ${entidad.getAttribute("id")}`
+                  );
+                }
+              });
+            }, 5000);
+            
+          } catch (error) {
+            console.error("[ERROR-GLOBAL]", error);
+            document.getElementById(
+              "estado-carga"
+            ).textContent = `Error: ${error.message}`;
+            
+            if (retryCount < APP_CONFIG.MAX_RETRIES) {
+              console.log(`Reintentando en ${APP_CONFIG.RETRY_DELAY}ms...`);
+              setTimeout(() => cargarModelos(retryCount + 1), APP_CONFIG.RETRY_DELAY);
+            } else {
+              console.error("Número máximo de reintentos alcanzado");
+              document.getElementById("estado-carga").textContent = 
+                "Error: No se pudo conectar al servidor. Recarga la página para intentar nuevamente.";
+            }
           }
         }
-      }
-      console.log("[INICIALIZACION] Llamando a cargarModelos()");
-      cargarModelos();
-    </script>
-  </body>
-</html>
+        console.log("[INICIALIZACION] Llamando a cargarModelos()");
+        cargarModelos();
+      </script>
+    </body>
+  </html>
